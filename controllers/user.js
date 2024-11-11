@@ -59,7 +59,22 @@ const register = async (req, res) => {
   }
 };
 
+const login  = async (req, res) => {
+    // Recoger parametros del body
+    let params =  req.body
+    // Buscar en la bbdd si existe
+    // comprobar su contraseña
+    // Devolver Token
+    // Devolver Datos del usuario
+
+    return res.status(200).send({
+        status: "Success",
+        message: "Accion login"
+    })
+}
+
 module.exports = {
   pruebaUser,
   register,
+  login
 };
