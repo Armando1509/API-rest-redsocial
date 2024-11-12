@@ -63,14 +63,39 @@ const login  = async (req, res) => {
     // Recoger parametros del body
     let params =  req.body
     // Buscar en la bbdd si existe
-    // comprobar su contraseña
+    try {
+        let user = await User.findOne({email: params.email})
+        if(!user) return res.status(404).send({
+            status: "Error",
+            message: "No existe el usuario"
+        })
+        // comprobar su contraseña
+        if(!params.password){
+          return res.status(401).send({status:"Error",message: "Introduce contraseña"})
+        }
+        let pwt = bcrypt.compareSync(params.password, user.password)
+        if(!pwt){
+            return res.status(400).send({
+                status: "Error",
+                message: "No te has identificado correctamente"
+            })
+        }
     // Devolver Token
     // Devolver Datos del usuario
 
     return res.status(200).send({
         status: "Success",
-        message: "Accion login"
+        message: "Accion login",
+        user: {
+            id: user._id,
+            name: user.name,
+            nick: user.nick
+        }
     })
+    } catch (error) {
+        
+    }
+   
 }
 
 module.exports = {
