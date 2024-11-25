@@ -1,6 +1,9 @@
-// Importar dependencias y modulos
+// Importar modulos
 const User = require("../models/user");
+// Importar dependencias
 const bcrypt = require("bcrypt");
+// Importar servicios
+const jwt = require("../services/jwt")
 
 //Accion de prueba
 const pruebaUser = (req, res) => {
@@ -72,7 +75,7 @@ const login  = async (req, res) => {
         // comprobar su contraseña
         if(!params.password){
           return res.status(401).send({status:"Error",message: "Introduce contraseña"})
-        }
+        } 
         let pwt = bcrypt.compareSync(params.password, user.password)
         if(!pwt){
             return res.status(400).send({
@@ -81,6 +84,7 @@ const login  = async (req, res) => {
             })
         }
     // Devolver Token
+   const token = jwt.createToken(user)
     // Devolver Datos del usuario
 
     return res.status(200).send({
@@ -90,7 +94,10 @@ const login  = async (req, res) => {
             id: user._id,
             name: user.name,
             nick: user.nick
-        }
+        },
+        token
+        
+
     })
     } catch (error) {
         
