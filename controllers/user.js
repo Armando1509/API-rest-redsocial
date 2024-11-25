@@ -140,9 +140,9 @@ const list = async (req, res) => {
   page = parseInt(page);
   // Consulta con mongoose paginate
   try {
-    let itemsPerPage = 2;
+    let itemsPerPage = 5;
     let total = await User.countDocuments() // Esto es para sacar el total de usuarios que encontro para la pagination
-    let users = await User.find().sort("_id: -1").paginate(page, itemsPerPage)
+    let users = await User.find().sort("_id").paginate(page, itemsPerPage)
     if (!users) {
       return res.status(404).send({
         status: "Error",
@@ -155,8 +155,8 @@ const list = async (req, res) => {
       page,
       users,
       itemsPerPage, 
-      pages: false,
-      total
+      total,
+      pages: Math.ceil(total/itemsPerPage)
     });
   } catch (error) {
     return res.status(500).send({
