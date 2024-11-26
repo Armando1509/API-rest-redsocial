@@ -3,8 +3,10 @@ const User = require("../models/user");
 // Importar dependencias
 const bcrypt = require("bcrypt");
 const mongoosePagination = require("mongoose-pagination");
+const fs = require("fs");
 // Importar servicios
 const jwt = require("../services/jwt");
+const user = require("../models/user");
 
 //Accion de prueba
 const pruebaUser = (req, res) => {
@@ -114,12 +116,10 @@ const profile = async (req, res) => {
     });
 
     if (!userProfile) {
-      return res
-        .status(404)
-        .send({
-          error: "error",
-          message: "El usuario no exite o hay un error",
-        });
+      return res.status(404).send({
+        error: "error",
+        message: "El usuario no exite o hay un error",
+      });
     }
     // Devolver el resultado
     return res.status(200).send({
@@ -141,83 +141,147 @@ const list = async (req, res) => {
   // Consulta con mongoose paginate
   try {
     let itemsPerPage = 5;
-    let total = await User.countDocuments() // Esto es para sacar el total de usuarios que encontro para la pagination
-    let users = await User.find().sort("_id").paginate(page, itemsPerPage)
+    let total = await User.countDocuments(); // Esto es para sacar el total de usuarios que encontro para la pagination
+    let users = await User.find().sort("_id").paginate(page, itemsPerPage);
     if (!users) {
       return res.status(404).send({
         status: "Error",
-        message: "No hay usuarios disponibles"
-      })
+        message: "No hay usuarios disponibles",
+      });
     }
     return res.status(200).send({
       status: "Success",
       message: "Ruta de listado de usuarios",
       page,
       users,
-      itemsPerPage, 
+      itemsPerPage,
       total,
-      pages: Math.ceil(total/itemsPerPage)
+      pages: Math.ceil(total / itemsPerPage),
     });
   } catch (error) {
     return res.status(500).send({
       status: "Success",
       message: "Todo esta mal",
-      page
+      page,
     });
   }
 };
 
-const update = async (req,res) =>{
+const update = async (req, res) => {
   // Recoger info del usuario a actualizar
-  let userIdentity = req.user
-  let userToUpdate = req.body
+  let userIdentity = req.user;
+  let userToUpdate = req.body;
   // Eliminar campos sobrantes
-  delete userToUpdate.iat
-  delete userToUpdate.exp
-  delete userToUpdate.role
-  delete userToUpdate.image
+  delete userToUpdate.iat;
+  delete userToUpdate.exp;
+  delete userToUpdate.role;
+  delete userToUpdate.image;
   // Comprobar si el usuario ya existe
   try {
     const users = await User.find({
       $or: [{ email: userToUpdate.email }, { nick: userToUpdate.nick }],
     });
-    let userIsset = false
-    users.forEach(user => {if(user && user._id != userIdentity.id) userIsset= true});
+    let userIsset = false;
+    users.forEach((user) => {
+      if (user && user._id != userIdentity.id) userIsset = true;
+    });
     if (userIsset) {
       return res.status(400).json({
         status: "Error",
         message: "El usuarios ya existe",
       });
-    } 
-      // Cifrar contraseña
-      if(userToUpdate.password){
-        let pwd = await bcrypt.hash(userToUpdate.password, 10);
-        userToUpdate.password = pwd;
-      }
-      //Busca y actualiza
-      let userUpdated = await User.findByIdAndUpdate(userIdentity.id, userToUpdate, {new: true})
-      console.log("use ID", userIdentity.id);
-      
-      if(!userUpdated){
-        return res.status(400).json({
-          status: "Error",
-          message: "Error al actualizar usuario",
-        });
-      }
-      // Devolver respuesta
-      return res.status(200).send({
-        status: "Success",
-        message: "Metodo de actualiza usuario",
-        user: userToUpdate,
-      })
+    }
+    // Cifrar contraseña
+    if (userToUpdate.password) {
+      let pwd = await bcrypt.hash(userToUpdate.password, 10);
+      userToUpdate.password = pwd;
+    }
+    //Busca y actualiza
+    let userUpdated = await User.findByIdAndUpdate(
+      userIdentity.id,
+      userToUpdate,
+      { new: true }
+    );
+
+    if (!userUpdated) {
+      return res.status(400).json({
+        status: "Error",
+        message: "Error al actualizar usuario",
+      });
+    }
+    // Devolver respuesta
+    return res.status(200).send({
+      status: "Success",
+      message: "Metodo de actualiza usuario",
+      user: userToUpdate,
+    });
   } catch (error) {
     return res.status(500).json({
       status: "Error",
       message: "Ni de pedo esta jalando",
     });
   }
-}
+};
 
+const upload = async (req, res) => {
+  // Recoger el fichero de imagen y comprobar si existe
+  if (!req.file) {
+    return res.status(404).send({
+      status: "Error",
+      message: "Peticion no incluye la imagen",
+    });
+  }
+  // Conseguir el nombre del archivo
+  let image = req.file.originalname;
+
+  // Sacar la estension del archivo
+  const imageSplit = image.split(".");
+  const extension = imageSplit[1];
+  // comprobar la extension
+  if (
+    extension != "png" &&
+    extension != "jpg" &&
+    extension != "jpeg" &&
+    extension != "gif"
+  ) {
+    //Borrar Archivo subido
+    const filePath = req.file.path;
+    const fileDelete = fs.unlinkSync(filePath);
+    // Devolver respues negativa
+    return res.status(400).send({
+      status: "Error",
+      message: "Extension del fichero invalida",
+    });
+  }
+  try {
+    let imageUpdate = await User.findByIdAndUpdate(
+      req.user.id,
+      { image: req.file.filename },
+      { new: true }
+    );
+    if (!imageUpdate) {
+      return res.status(400).json({
+        status: "Error",
+        message: "No hay imagen para actualizar",
+        user: req.user,
+        file: req.file,
+      });
+    }
+    return res.status(200).json({
+      status: "Success",
+      message: "Prueba jalando",
+      user: imageUpdate,
+      file: req.file,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      status: "Error",
+      message: "No Funciona ponte a llorar",
+      user: req.user,
+      file: req.file,
+    });
+  }
+};
 
 module.exports = {
   pruebaUser,
@@ -226,4 +290,5 @@ module.exports = {
   profile,
   list,
   update,
+  upload,
 };
