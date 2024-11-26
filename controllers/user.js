@@ -165,9 +165,59 @@ const list = async (req, res) => {
       page
     });
   }
-
-  
 };
+
+const update = async (req,res) =>{
+  // Recoger info del usuario a actualizar
+  let userIdentity = req.user
+  let userToUpdate = req.body
+  // Eliminar campos sobrantes
+  delete userToUpdate.iat
+  delete userToUpdate.exp
+  delete userToUpdate.role
+  delete userToUpdate.image
+  // Comprobar si el usuario ya existe
+  try {
+    const users = await User.find({
+      $or: [{ email: userToUpdate.email }, { nick: userToUpdate.nick }],
+    });
+    let userIsset = false
+    users.forEach(user => {if(user && user._id != userIdentity.id) userIsset= true});
+    if (userIsset) {
+      return res.status(400).json({
+        status: "Error",
+        message: "El usuarios ya existe",
+      });
+    } 
+      // Cifrar contraseña
+      if(userToUpdate.password){
+        let pwd = await bcrypt.hash(userToUpdate.password, 10);
+        userToUpdate.password = pwd;
+      }
+      //Busca y actualiza
+      let userUpdated = await User.findByIdAndUpdate(userIdentity.id, userToUpdate, {new: true})
+      console.log("use ID", userIdentity.id);
+      
+      if(!userUpdated){
+        return res.status(400).json({
+          status: "Error",
+          message: "Error al actualizar usuario",
+        });
+      }
+      // Devolver respuesta
+      return res.status(200).send({
+        status: "Success",
+        message: "Metodo de actualiza usuario",
+        user: userToUpdate,
+      })
+  } catch (error) {
+    return res.status(500).json({
+      status: "Error",
+      message: "Ni de pedo esta jalando",
+    });
+  }
+}
+
 
 module.exports = {
   pruebaUser,
@@ -175,4 +225,5 @@ module.exports = {
   login,
   profile,
   list,
+  update,
 };

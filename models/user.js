@@ -6,6 +6,7 @@ const UserSchema = Schema({
     required: true,
   },
   surname: String,
+  bio: String,
   nick: {
     type: String,
     required: true,
@@ -22,7 +23,7 @@ const UserSchema = Schema({
     type: String,
     default: "role_user",
   },
-  Image: {
+  image: {
     type: String,
     default: "default.png",
   },
