@@ -4,6 +4,9 @@ const User = require("../models/user");
 // Importar dependencias
 const mongoosePaginate = require("mongoose-pagination")
 
+// Importar servicio
+const followService = require("../services/followService")
+
 //Accion de prueba
 const pruebaFollow = async (req, res) => {
   return res.status(200).send({
@@ -106,12 +109,17 @@ const following = async (req, res) => {
   // Find a follow, popular datos de los usuarios y paginar con moongose paginate
   let total = await Follow.countDocuments()
   let follows = await Follow.find({user: userId}).populate("user followed", "-password, -role, -__v").paginate(page, itemsPerPage)
+  // Sacar un array de los ids de los usuarios que me siguen y lo que sigue el usuario identificado
+  let followUserIds = await followService.followUserIds(userId)
+
   return res.status(200).send({
     status: "Success",
     message: "Listado de usuarios que estoy siguiendo",
     follows,
     total,
-    pages: Math.ceil(total/itemsPerPage)
+    pages: Math.ceil(total/itemsPerPage),
+    user_followings: followUserIds.following,
+    user_follow_me: followUserIds.followers
   });
 };
 
