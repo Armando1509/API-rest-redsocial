@@ -1,3 +1,4 @@
+
 const Publication = require("../models/publication");
 
 //Accion de prueba
@@ -57,20 +58,20 @@ const one = async (req, res) => {
   let id = req.params.id;
   try {
     const userPublication = await Publication.findById(id).select({
-        create_at: 0,
-        __v: 0
-    })
-    if(!userPublication){
-        return res.status(404).send({
-            status: "Error",
-            message: "La publicacion no existe"
-        })
+      create_at: 0,
+      __v: 0,
+    });
+    if (!userPublication) {
+      return res.status(404).send({
+        status: "Error",
+        message: "La publicacion no existe",
+      });
     }
     return res.status(200).send({
       status: "Success",
       message: "Funcionando",
       id,
-      userPublication
+      publication: userPublication,
     });
   } catch (error) {
     return res.status(500).send({
@@ -82,8 +83,38 @@ const one = async (req, res) => {
 
 // Eliminar publicaciones
 
+const remove = async (req, res) => {
+    // traer al usuario
+    let userId = req.user.id
+  // Traer el Id por params
+  let publicationId = req.params.id;
+
+  try {
+    let removePublication = await Publication.deleteOne({ _id: publicationId})
+    if(!removePublication){
+        return res.status(404).send({
+            status: "Error",
+            message: "No se a podido eliminar la publicacion",
+          });
+    }
+    return res.status(200).send({
+      status: "Success",
+      message: "Publicacion eliminada",
+      publicationId,
+      userId,
+      removePublication,
+    });
+  } catch (error) {
+    return res.status(500).send({
+      status: "Error",
+      message: "Ponte a llorar",
+    });
+  }
+};
+
 module.exports = {
   pruebaPublication,
   save,
   one,
+  remove,
 };
