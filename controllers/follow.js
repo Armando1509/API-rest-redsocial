@@ -2,10 +2,10 @@ const Follow = require("../models/follow");
 const User = require("../models/user");
 
 // Importar dependencias
-const mongoosePaginate = require("mongoose-pagination")
+const mongoosePaginate = require("mongoose-pagination");
 
 // Importar servicio
-const followService = require("../services/followService")
+const followService = require("../services/followService");
 
 //Accion de prueba
 const pruebaFollow = async (req, res) => {
@@ -96,39 +96,67 @@ const following = async (req, res) => {
   const userId = req.user.id;
 
   // Comprobar si me llega el id por parametro en url
- if(req.params.id) userId = req.params.id
+  if (req.params.id) userId = req.params.id;
 
   // Comprobar si me llega la pagina, si no la default sera 1
-  let page = 1
+  let page = 1;
 
-  if(req.params.page) page = req.params.page
+  if (req.params.page) page = req.params.page;
 
   // Usuarios por pagina que quiero mostrar
-  let itemsPerPage = 5
+  let itemsPerPage = 5;
 
   // Find a follow, popular datos de los usuarios y paginar con moongose paginate
-  let total = await Follow.countDocuments()
-  let follows = await Follow.find({user: userId}).populate("user followed", "-password, -role, -__v").paginate(page, itemsPerPage)
+  let total = await Follow.countDocuments();
+  let follows = await Follow.find({ user: userId })
+    .populate("user followed", "-password, -role, -__v")
+    .paginate(page, itemsPerPage);
   // Sacar un array de los ids de los usuarios que me siguen y lo que sigue el usuario identificado
-  let followUserIds = await followService.followUserIds(userId)
+  let followUserIds = await followService.followUserIds(userId);
 
   return res.status(200).send({
     status: "Success",
     message: "Listado de usuarios que estoy siguiendo",
     follows,
     total,
-    pages: Math.ceil(total/itemsPerPage),
+    pages: Math.ceil(total / itemsPerPage),
     user_followings: followUserIds.following,
-    user_follow_me: followUserIds.followers
+    user_follow_me: followUserIds.followers,
   });
 };
 
-// Accion de listado de usuarios que me estan siguiendo
+// Accion Listado de usuarios que me siguen
 
 const followers = async (req, res) => {
+  // Sacar el id del usuario identificado
+  const userId = req.user.id;
+
+  // Comprobar si me llega el id por parametro en url
+  if (req.params.id) userId = req.params.id;
+
+  // Comprobar si me llega la pagina, si no la default sera 1
+  let page = 1;
+
+  if (req.params.page) page = req.params.page;
+
+  // Usuarios por pagina que quiero mostrar
+  let itemsPerPage = 5;
+  // Find a follow, popular datos de los usuarios y paginar con moongose paginate
+  let total = await Follow.countDocuments();
+  let follows = await Follow.find({ followed: userId })
+    .populate("user followed", "-password, -role, -__v")
+    .paginate(page, itemsPerPage);
+  // Sacar un array de los ids de los usuarios que me siguen y lo que sigue el usuario identificado
+  let followUserIds = await followService.followUserIds(userId);
+
   return res.status(200).send({
     status: "Success",
     message: "Listado de usuarios que me siguen",
+    follows,
+    total,
+    pages: Math.ceil(total / itemsPerPage),
+    user_followings: followUserIds.following,
+    user_follow_me: followUserIds.followers,
   });
 };
 module.exports = {
