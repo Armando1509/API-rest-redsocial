@@ -4,11 +4,11 @@ const User = require("../models/user");
 const bcrypt = require("bcrypt");
 const mongoosePagination = require("mongoose-pagination");
 const fs = require("fs");
-const path = require("path")
+const path = require("path");
 // Importar servicios
 const jwt = require("../services/jwt");
 const user = require("../models/user");
-const followService = require("../services/followService")
+const followService = require("../services/followService");
 
 //Accion de prueba
 const pruebaUser = (req, res) => {
@@ -124,13 +124,13 @@ const profile = async (req, res) => {
       });
     }
     // Info de seguimiento
-    const followInfo = await followService.followThisUser(req.user.id, id)
+    const followInfo = await followService.followThisUser(req.user.id, id);
     // Devolver el resultado
     return res.status(200).send({
       status: "Success",
       user: userProfile,
       following: followInfo.following,
-      follower: followInfo.follower
+      follower: followInfo.follower,
     });
   } catch (error) {
     return res.status(404).send({ error: "error", message: "no hay conexion" });
@@ -155,6 +155,8 @@ const list = async (req, res) => {
         message: "No hay usuarios disponibles",
       });
     }
+    // Sacar un array de los ids de los usuarios que me siguen y lo que sigue el usuario identificado
+    let followUserIds = await followService.followUserIds(req.user.id);
     return res.status(200).send({
       status: "Success",
       message: "Ruta de listado de usuarios",
@@ -163,6 +165,8 @@ const list = async (req, res) => {
       itemsPerPage,
       total,
       pages: Math.ceil(total / itemsPerPage),
+      user_followings: followUserIds.following,
+      user_follow_me: followUserIds.followers
     });
   } catch (error) {
     return res.status(500).send({
@@ -293,7 +297,7 @@ const avatar = async (req, res) => {
   // Sacar el parametro de la url
   const file = req.params.file;
   // Montar el path real de la imagen
-  const filePath = path.resolve(__dirname,"../uploads/avatars", file)
+  const filePath = path.resolve(__dirname, "../uploads/avatars", file);
   // Comprobar si existe
   fs.stat(filePath, (error) => {
     if (error) {
@@ -302,8 +306,8 @@ const avatar = async (req, res) => {
         .send({ status: "error", message: "No existe la imagen" });
     }
     // devolver un file
-    return res.sendFile(filePath)
-    });
+    return res.sendFile(filePath);
+  });
 };
 
 module.exports = {
