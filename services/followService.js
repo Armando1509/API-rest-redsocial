@@ -2,6 +2,7 @@ const Follow = require("../models/follow");
 const user = require("../models/user");
 const followUserIds = async (identityUserId) => {
   try {
+    // Sacar info de seguimiento
     let following = await Follow.find({ user: identityUserId })
       .select({
         followed: 1,
@@ -32,7 +33,16 @@ const followUserIds = async (identityUserId) => {
   }
 };
 
-const followThisUser = async (identityUserId, profileUserId) => {};
+const followThisUser = async (identityUserId, profileUserId) => {
+  let following = await Follow.findOne({user: identityUserId })
+  
+let follower = await Follow.findOne({ user: profileUserId })
+  
+  return{
+    following,
+    follower
+  }
+};
 
 module.exports = {
   followUserIds,

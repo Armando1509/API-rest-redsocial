@@ -8,6 +8,7 @@ const path = require("path")
 // Importar servicios
 const jwt = require("../services/jwt");
 const user = require("../models/user");
+const followService = require("../services/followService")
 
 //Accion de prueba
 const pruebaUser = (req, res) => {
@@ -122,10 +123,14 @@ const profile = async (req, res) => {
         message: "El usuario no exite o hay un error",
       });
     }
+    // Info de seguimiento
+    const followInfo = await followService.followThisUser(req.user.id, id)
     // Devolver el resultado
     return res.status(200).send({
       status: "Success",
       user: userProfile,
+      following: followInfo.following,
+      follower: followInfo.follower
     });
   } catch (error) {
     return res.status(404).send({ error: "error", message: "no hay conexion" });
