@@ -1,9 +1,12 @@
 // Importar modulos
-const fs = require("fs")
-const path = require("path")
+const fs = require("fs");
+const path = require("path");
 
 // Importar modelos
 const Publication = require("../models/publication");
+
+// Importar servicios
+const followService = require("../services/followService");
 
 //Accion de prueba
 const pruebaPublication = async (req, res) => {
@@ -131,10 +134,10 @@ const user = async (req, res) => {
   try {
     let total = await Publication.countDocuments();
     let publications = await Publication.find({ user: userId })
-    .sort("-create_at")
-    .populate("user", "-create_at -__v -password")
-    .paginate(page, itemsPerPage);
-    if(publications.length <= 0){
+      .sort("-create_at")
+      .populate("user", "-create_at -__v -password")
+      .paginate(page, itemsPerPage);
+    if (publications.length <= 0) {
       return res.status(404).send({
         status: "Error",
         message: "No hay publicaciones para mostrar",
@@ -155,7 +158,7 @@ const user = async (req, res) => {
   }
 };
 const upload = async (req, res) => {
-  let publicationId = req.params.id
+  let publicationId = req.params.id;
   // Recoger el fichero de imagen y comprobar si existe
   if (!req.file) {
     return res.status(404).send({
@@ -187,7 +190,7 @@ const upload = async (req, res) => {
   }
   try {
     let publicationUpdate = await Publication.findByIdAndUpdate(
-      {"user": req.user.id, "_id": publicationId},
+      { user: req.user.id, _id: publicationId },
       { file: req.file.filename },
       { new: true }
     );
@@ -233,6 +236,48 @@ const media = async (req, res) => {
   });
 };
 
+// Listar todas las publicaciones
+const feed = async (req, res) => {
+  // Sacar la pagina actual
+  let page = 1;
+
+  if (req.params.page) {
+    page = req.params.page;
+  }
+
+  // Establece numero de elementos por pagina
+  let itemsPerPage = 5;
+
+  // Sacar una array de indentificadores de usuarios que yo sigo como usuario logueado
+  try {
+    const myFollows = await followService.followUserIds(req.user.id);
+    // Find a publicaciones in, order, popular, paginar
+    const publications = await Publication.find(
+      {
+        user: { $in: myFollows.following },
+      }
+      .populate("user")
+         .sort("-created_at")
+        .paginate(page, itemsPerPage, ) 
+
+      
+        
+    )
+    return res.status(200).json({
+      status: "Success",
+      message: "Prueba jalando",
+      followin: myFollows.following,
+      publications,
+    });
+    
+  } catch (error) {
+    return res.status(400).json({
+      status: "Error",
+      message: "No Funciona ponte a llorar",
+    });
+  }
+};
+
 module.exports = {
   pruebaPublication,
   save,
@@ -240,5 +285,6 @@ module.exports = {
   remove,
   user,
   upload,
-  media
+  media,
+  feed,
 };
