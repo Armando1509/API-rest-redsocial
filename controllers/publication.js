@@ -1,3 +1,8 @@
+// Importar modulos
+const fs = require("fs")
+const path = require("path")
+
+// Importar modelos
 const Publication = require("../models/publication");
 
 //Accion de prueba
@@ -149,6 +154,84 @@ const user = async (req, res) => {
     });
   }
 };
+const upload = async (req, res) => {
+  let publicationId = req.params.id
+  // Recoger el fichero de imagen y comprobar si existe
+  if (!req.file) {
+    return res.status(404).send({
+      status: "Error",
+      message: "Peticion no incluye la imagen",
+    });
+  }
+  // Conseguir el nombre del archivo
+  let image = req.file.originalname;
+
+  // Sacar la estension del archivo
+  const imageSplit = image.split(".");
+  const extension = imageSplit[1];
+  // comprobar la extension
+  if (
+    extension != "png" &&
+    extension != "jpg" &&
+    extension != "jpeg" &&
+    extension != "gif"
+  ) {
+    //Borrar Archivo subido
+    const filePath = req.file.path;
+    const fileDelete = fs.unlinkSync(filePath);
+    // Devolver respues negativa
+    return res.status(400).send({
+      status: "Error",
+      message: "Extension del fichero invalida",
+    });
+  }
+  try {
+    let publicationUpdate = await Publication.findByIdAndUpdate(
+      {"user": req.user.id, "_id": publicationId},
+      { file: req.file.filename },
+      { new: true }
+    );
+    if (!publicationUpdate) {
+      return res.status(400).json({
+        status: "Error",
+        message: "No hay imagen para actualizar",
+        user: req.user,
+        file: req.file,
+      });
+    }
+    return res.status(200).json({
+      status: "Success",
+      message: "Prueba jalando",
+      publication: publicationUpdate,
+      file: req.file,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      status: "Error",
+      message: "No Funciona ponte a llorar",
+      user: req.user,
+      file: req.file,
+    });
+  }
+};
+
+// Devolver archivos multimedia
+const media = async (req, res) => {
+  // Sacar el parametro de la url
+  const file = req.params.file;
+  // Montar el path real de la imagen
+  const filePath = path.resolve(__dirname, "../uploads/publications", file);
+  // Comprobar si existe
+  fs.stat(filePath, (error) => {
+    if (error) {
+      return res
+        .status(404)
+        .send({ status: "error", message: "No existe la imagen" });
+    }
+    // devolver un file
+    return res.sendFile(filePath);
+  });
+};
 
 module.exports = {
   pruebaPublication,
@@ -156,4 +239,6 @@ module.exports = {
   one,
   remove,
   user,
+  upload,
+  media
 };
