@@ -256,9 +256,9 @@ const feed = async (req, res) => {
       {
         user: { $in: myFollows.following },
       }
-      .populate("user")
+   /*    .populate("user")
          .sort("-created_at")
-        .paginate(page, itemsPerPage, ) 
+        .paginate(page, itemsPerPage, )  */
 
       
         

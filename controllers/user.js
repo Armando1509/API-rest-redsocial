@@ -9,6 +9,7 @@ const path = require("path");
 const jwt = require("../services/jwt");
 const user = require("../models/user");
 const followService = require("../services/followService");
+const validate = require("../helpers/validate");
 
 //Accion de prueba
 const pruebaUser = (req, res) => {
@@ -28,6 +29,9 @@ const register = async (req, res) => {
       message: "Faltan datos por enviar",
     });
   }
+
+  // Validacion avanzada
+  validate(params)
 
   // Normalizar datos antes de la búsqueda
   params.email = params.email.toLowerCase().trim();
